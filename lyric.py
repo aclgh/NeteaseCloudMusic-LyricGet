@@ -16,12 +16,30 @@ def Remove_chars(string):
     return result
 
 
+def search():
+    # 搜索歌曲
+    keywords = input("Please enter the keyword:")
+    url = f"https://cmapi.aclgh.xyz/search?keywords={keywords}&type=1"
+    response = requests.get(url)
+    data = response.json()
+    for i in range(0, 30):
+        try:
+            name = data["result"]["songs"][i]["name"]
+            s_name = data["result"]["songs"][i]["artists"][0]["name"]
+            id_value = data["result"]["songs"][i]["id"]
+            print(f"{i+1}.{name}-{s_name} id:{id_value}")
+        except:
+            break
+    sn = int(input("Please enter the S/N:"))
+    return int(data["result"]["songs"][sn-1]["id"])
+
+
 def Getinf(id_value):
     url = f"https://cmapi.aclgh.xyz/song/detail?ids={id_value}"
     response = requests.get(url)
     data = response.json()
     s_name = data["songs"][0]["name"]
-    try:
+    try:  # 尝试获取歌曲译名
         s_name_tns = data["songs"][0]["tns"]
         song_name = f"{s_name}({s_name_tns[0]})"
     except:
@@ -42,7 +60,7 @@ def GetLyric(id_value):
 
 
 def Getid():
-    id_url = input("The id of the song or the share url:")
+    id_url = input("The id of the song or the share url(q to search):")
     if id_url[0] == 'h':
         pattern = r"id=(\d+)"  # 匹配数字
         match = re.search(pattern, id_url)
@@ -75,7 +93,7 @@ def Combination(lyric, tlyric):
                 # if (not tlrc.endswith(']')) and lrc_match.group() == tlrc_match.group():
                     # 译文
                     com_lrc += tlrc.replace(tlrc_match.group(), '')+'\n\n'
-    return com_lrc.replace('\n\n\n', '\n\n')  # 处理没有译文时的三个']n'
+    return com_lrc.strip().replace("\n\n\n", "\n\n")   # 处理没有译文时的无意义空白输出
 
 
 def Hatsuon(text):
@@ -88,11 +106,13 @@ def Hatsuon(text):
 
 def main():
     id_value = Getid()
+    if id_value == 'q':
+        id_value = search()
     lrc = GetLyric(id_value)
     lyric, tlyric = lrc
     com_lyc = Combination(lyric, tlyric)
     inf = Getinf(id_value)
-    with open(Remove_chars(f"{inf}"), 'w', encoding="utf-8") as file:
+    with open(Remove_chars(f"{inf}.txt"), 'w', encoding="utf-8") as file:
         file.write(inf+'\n'+com_lyc)
     file.close()
 
